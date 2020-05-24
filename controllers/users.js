@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/user.js');
 const NotFoundError = require('../errors/notfounderror');
+const { KEY } = require('../config');
 
 const { ObjectId } = mongoose.Types;
 
@@ -47,10 +48,11 @@ module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   userModel.findUserByCredentials(email, password)
     .then((user) => {
-      const { NODE_ENV, JWT_SECRET } = process.env;
+      if (!user) throw new Error();
+
       const token = jwt.sign(
         { _id: user._id },
-        NODE_ENV === 'production' ? JWT_SECRET : 'SOME-SECRET-KEY',
+        KEY,
         { expiresIn: '7d' },
       );
 
