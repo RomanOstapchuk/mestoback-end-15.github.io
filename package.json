@@ -1,7 +1,7 @@
 {
   "name": "mestoback-end-15.github.io",
-  "version": "0.0.1",
-  "description": "Проект Mestoback-end-14 создан для демонстрации работы серверной части проекта Mesto",
+  "version": "0.0.2",
+  "description": "Проект Mestoback-end-15 создан для демонстрации работы серверной части проекта Mesto",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

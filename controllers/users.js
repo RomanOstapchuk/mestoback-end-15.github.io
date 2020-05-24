@@ -38,7 +38,7 @@ module.exports.createUser = (req, res, next) => {
         avatar,
       })
         .then((user) => userModel.findOne({ _id: user._id }))
-        .then((user) => res.status(200).send({ user }))
+        .then((user) => res.status(200).send({ data:user }))
         .catch(next);
     });
 };
