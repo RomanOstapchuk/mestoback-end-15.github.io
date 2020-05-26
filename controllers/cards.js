@@ -11,22 +11,19 @@ module.exports.getCards = (req, res, next) => {
 module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   cardModel.create({ name, link, owner: req.user._id })
-    .then((card) => res.status(200).send({ data: card }))
+    .then((card) => res.status(200).send({ card }))
     .catch(next);
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  const { cardId } = req.params;
+  const { id } = req.params;
 
-  cardModel.findById(cardId)
-    .orFail(() => new NotFoundError('Карточка не найдена'))
-    .then((card) => {
-      if (!card.owner.equals(req.user._id)) {
-        new Forbidden('Отсутствует доступ');
-      } else {
-        cardModel.findByIdAndRemove(cardId)
-          .then(() => res.status(200).send({ data: card }));
-      }
-    })
+  cardModel.findById({ _id: id })
+    .orFail(() => new NotFoundError('Нет такой карточки'))
+    .then(() => Card.findOneAndDelete({ $and: [{ _id: id }, { owner: req.user._id }] })
+      .orFail(() => new Forbidden('Недостаточно прав'))
+      .then((card) => {
+        res.status(200).send(card);
+      }))
     .catch(next);
 };
