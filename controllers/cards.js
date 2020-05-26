@@ -20,7 +20,7 @@ module.exports.deleteCard = (req, res, next) => {
 
   cardModel.findById({ _id: id })
     .orFail(() => new NotFoundError('Нет такой карточки'))
-    .then(() => Card.findOneAndDelete({ $and: [{ _id: id }, { owner: req.user._id }] })
+    .then(() => cardModel.findOneAndDelete({ $and: [{ _id: id }, { owner: req.user._id }] })
       .orFail(() => new Forbidden('Недостаточно прав'))
       .then((card) => {
         res.status(200).send(card);
