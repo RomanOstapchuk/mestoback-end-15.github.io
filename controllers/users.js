@@ -2,27 +2,30 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/user.js');
+const NotFoundError = require('../errors/notfounderror');
+const { KEY } = require('../config');
 
 const { ObjectId } = mongoose.Types;
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   userModel.find({})
     .then((users) => res.status(200).send({ data: users }))
-    .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
+    .catch(next);
 };
 
-module.exports.findUser = (req, res) => {
+module.exports.findUser = (req, res, next) => {
   const { id } = req.params;
   if (!ObjectId.isValid(id)) {
     res.status(400).send({ message: 'Невалидный id' });
     return;
   }
   userModel.findById({ _id: id })
-    .then((user) => (user ? res.status(200).send({ data: user }) : res.status(404).send({ message: 'Нет пользователя с таким id' })))
-    .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
+    .orFail(() => new NotFoundError('Запрашиваемый пользователь не найден'))
+    .then((user) => {res.status(200).send({ data: user })})
+    .catch(next);
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const {
     email, password, name, about, avatar,
   } = req.body;
@@ -36,19 +39,20 @@ module.exports.createUser = (req, res) => {
         avatar,
       })
         .then((user) => userModel.findOne({ _id: user._id }))
-        .then((user) => res.status(200).send({ user }))
-        .catch((err) => ((err.name === 'ValidationError') ? res.status(400).send({ message: 'Ошибка валидации' }) : res.status(500).send({ message: 'Произошла ошибка' })));
+        .then((user) => res.status(200).send({ data:user }))
+        .catch(next);
     });
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   userModel.findUserByCredentials(email, password)
     .then((user) => {
-      const { NODE_ENV, JWT_SECRET } = process.env;
+      if (!user) throw new Error();
+
       const token = jwt.sign(
         { _id: user._id },
-        NODE_ENV === 'production' ? JWT_SECRET : 'SOME-SECRET-KEY',
+        KEY,
         { expiresIn: '7d' },
       );
 
@@ -57,7 +61,5 @@ module.exports.login = (req, res) => {
         httpOnly: true,
       }).end();
     })
-    .catch((err) => {
-      res.status(401).json({ message: err.message });
-    });
+    .catch(next);
 };
